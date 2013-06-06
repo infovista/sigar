@@ -1809,6 +1809,7 @@ int sigar_disk_usage_get(sigar_t *sigar, const char *name,
 
         disk->queue = avw;
         disk->service_time = 0.0;
+		disk->total_service_time=SIGAR_NSEC2MSEC(disk->time);
 
         if (tps && (avw != 0.0 || avr != 0.0)) {
             mtps = 1000.0 / tps;

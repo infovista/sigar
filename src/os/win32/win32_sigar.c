@@ -2231,6 +2231,7 @@ SIGAR_DECLARE(int) sigar_disk_usage_get(sigar_t *sigar,
             disk->read_bytes  = PERF_VAL(PERF_IX_DISK_READ_BYTES);
             disk->write_bytes = PERF_VAL(PERF_IX_DISK_WRITE_BYTES);
             disk->queue = PERF_VAL(PERF_IX_DISK_QUEUE);
+            disk->total_service_time = NS100_2MSEC(PERF_VAL(PERF_IX_DISK_TIME_NUMERATOR));
             return SIGAR_OK;
         }
     }

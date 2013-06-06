@@ -476,6 +476,7 @@ typedef struct {
     sigar_uint64_t snaptime;
     double service_time;
     double queue;
+    sigar_uint64_t total_service_time;
 } sigar_disk_usage_t;
 
 /* XXX for sigar_file_system_usage_t compat */
@@ -485,6 +486,7 @@ typedef struct {
 #define disk_read_bytes disk.read_bytes
 #define disk_queue disk.queue
 #define disk_service_time disk.service_time
+#define disk_total_service_time disk.total_service_time
 
 typedef struct {
     sigar_disk_usage_t disk;

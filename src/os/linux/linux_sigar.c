@@ -1478,7 +1478,8 @@ int sigar_disk_usage_get(sigar_t *sigar, const char *name,
             disk = &device_usage;
         }
 
-        disk->snaptime = uptime.uptime;
+        disk->snaptime = uptime.uptime;		
+		disk->total_service_time=disk->time;
 
         if (iodev->disk.snaptime) {
             interval = disk->snaptime - iodev->disk.snaptime;

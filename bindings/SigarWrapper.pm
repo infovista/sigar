@@ -863,6 +863,11 @@ use vars qw(%classes %cmds);
          desc => 'Percent of disk used',
          plat => '*'
       },
+      {
+         name => 'disk_total_service_time', type => 'Long',
+         desc => '',
+         plat => ''
+      },
     ],
     DiskUsage => [
       {
@@ -892,6 +897,11 @@ use vars qw(%classes %cmds);
       },
       {
          name => 'service_time', type => 'Double',
+         desc => '',
+         plat => ''
+      },
+      {
+         name => 'total_service_time', type => 'Long',
          desc => '',
          plat => ''
       },

@@ -361,7 +361,7 @@ int sigar_group_name_get(sigar_t *sigar, int gid, char *buf, int buflen);
     (disk)->reads = (disk)->writes = \
     (disk)->read_bytes = (disk)->write_bytes = \
     (disk)->rtime = (disk)->wtime = (disk)->qtime = (disk)->time = \
-    (disk)->queue = (disk)->service_time = SIGAR_FIELD_NOTIMPL; \
+    (disk)->queue = (disk)->service_time = (disk)->total_service_time = SIGAR_FIELD_NOTIMPL; \
     (disk)->snaptime = 0
 
 /* key used for filesystem (/) -> device (/dev/hda1) mapping */
