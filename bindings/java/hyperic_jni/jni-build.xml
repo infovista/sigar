@@ -464,7 +464,7 @@
 
         <linkerarg value="/MACHINE:X64" if="jni.arch64"/>
         <linkerarg value="${jni.info.res}" if="jni.info.res"/>
-        <syslibset libs="kernel32,user32,advapi32,ws2_32,netapi32,shell32,pdh,version"/>
+        <syslibset libs="Psapi,ole32,oleaut32,kernel32,user32,advapi32,ws2_32,netapi32,shell32,pdh,version"/>
       </linker>
 
       <compiler name="msvc" debug="${jni.debug}" if="win32">
@@ -501,7 +501,7 @@
       <includepath>
         <path refid="jni.include.dirs"/>
       </includepath>
-
+      
       <sysincludepath location="${jni.javahome}/include"/>
       <sysincludepath location="${jni.javahome}/include/${jni.jdk.os}"/>
       <sysincludepath location="${jni.dmalloc}/include"
