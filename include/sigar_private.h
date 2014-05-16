@@ -26,7 +26,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#if !(defined(WIN32) || defined(WIN64))
+#ifndef WIN32
 #include <unistd.h>
 #include <stddef.h>
 #ifndef DARWIN
@@ -68,7 +68,8 @@
    sigar_cache_t *proc_cpu; \
    sigar_cache_t *net_listen; \
    sigar_cache_t *net_services_tcp; \
-   sigar_cache_t *net_services_udp
+   sigar_cache_t *net_services_udp;\
+   sigar_cache_t *proc_io
 
 #if defined(WIN32) || defined(WIN64)
 #   define SIGAR_INLINE __inline
@@ -83,7 +84,7 @@
 #define sigar_strdup(s) \
     dmalloc_strndup(__FILE__, __LINE__, (s), -1, 0)
 #else
-#  if defined(WIN32) || defined(WIN64)
+#  ifdef WIN32
 #    define sigar_strdup(s) _strdup(s)
 #  else
 #    define sigar_strdup(s) strdup(s)
@@ -110,7 +111,7 @@
 #define strnEQ(s1, s2, n) (strncmp(s1, s2, n) == 0)
 #endif
 
-#if defined(WIN32) || defined(WIN64)
+#ifdef WIN32
 #define strcasecmp stricmp
 #define strncasecmp strnicmp
 #endif
@@ -370,7 +371,7 @@ int sigar_group_name_get(sigar_t *sigar, int gid, char *buf, int buflen);
 #define SIGAR_FSDEV_ID(sb) \
     (S_ISBLK((sb).st_mode) ? (sigar_uint64_t)((sb).st_rdev) : (sigar_uint64_t)(((sigar_uint64_t)((sb).st_ino) << 32) + (sb).st_dev))
 
-#if defined(WIN32) || defined(WIN64) || defined(NETWARE)
+#if defined(WIN32) || defined(NETWARE)
 int sigar_get_iftype(const char *name, int *type, int *inst);
 #endif
 
@@ -399,10 +400,14 @@ int sigar_get_iftype(const char *name, int *type, int *inst);
 #define SIGAR_NIC_SIT      "IPv6-in-IPv4"
 #define SIGAR_NIC_IRDA     "IrLAP"
 #define SIGAR_NIC_EC       "Econet"
-
-#if !(defined(WIN32) || defined(WIN64))
+#define PID_CACHE_CLEANUP_PERIOD 1000*60*10 /* 10 minutes */
+#define PID_CACHE_ENTRY_EXPIRE_PERIOD 1000*60*20 /* 20 minutes */
+#ifndef WIN32
 #include <netdb.h>
 #endif
+
+#define PROC_PID_CPU_CACHE 1
+#define PROC_PID_IO_CACHE 2
 
 #define SIGAR_HOSTENT_LEN 1024
 #if defined(_AIX)
@@ -412,7 +417,7 @@ int sigar_get_iftype(const char *name, int *type, int *inst);
 typedef struct {
     char buffer[SIGAR_HOSTENT_LEN];
     int error;
-#if !(defined(WIN32) || defined(WIN64))
+#ifndef WIN32
     struct hostent hs;
 #endif
 #ifdef SIGAR_HAS_HOSTENT_DATA
