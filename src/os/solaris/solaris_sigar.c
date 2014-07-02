@@ -36,6 +36,8 @@
 #include <dirent.h>
 #include <sys/vm_usage.h>
 #include <zone.h>
+#include <sys/statvfs.h>
+#include <sys/vnode.h>
 
 #define PROC_ERRNO ((errno == ENOENT) ? ESRCH : errno)
 #define SIGAR_USR_UCB_PS "/usr/ucb/ps"
@@ -1847,19 +1849,144 @@ int sigar_disk_usage_get(sigar_t *sigar, const char *name,
     return status;
 }
 
+static int io_kstat_read_vopstat(sigar_t *sigar, sigar_disk_usage_t *disk, kstat_t *ksp)
+{
+	struct vopstats *io;
+
+	kstat_read(sigar->kc, ksp, NULL);
+
+	io = (vopstats_t *)ksp->ks_data;
+
+	disk->reads       = io->nread.value.ui64;
+	disk->writes      = io->nwrite.value.ui64;
+	disk->read_bytes  = io->read_bytes.value.ui64;
+	disk->write_bytes = io->write_bytes.value.ui64;
+	disk->qtime       = 0;
+	disk->rtime       = 0;
+	disk->wtime       = 0;
+	disk->time        = disk->rtime + disk->wtime;
+	disk->snaptime    = ksp->ks_snaptime;
+
+	return SIGAR_OK;
+}
+
+static int sigar_kstat_disk_usage_get_vopstat(sigar_t *sigar, u_long id, sigar_disk_usage_t *disk, kstat_t **kio)
+{
+	kstat_t *ksp;
+
+	if (sigar_kstat_update(sigar) == -1) {
+		return errno;
+	}
+
+	// Build vopstat name
+	char name[64];
+	sprintf(name,"%s%lx",VOPSTATS_STR,id);
+
+	for (ksp = sigar->kc->kc_chain; ksp; ksp = ksp->ks_next)
+	{
+		if (strEQ(ksp->ks_name, name)) {
+			int status = io_kstat_read_vopstat(sigar, disk, ksp);
+			*kio = ksp;
+			return status;
+		}
+	}
+
+	return ENXIO;
+}
+
+int sigar_disk_usage_get_vopstat(sigar_t *sigar, const char *name, sigar_disk_usage_t *disk)
+{
+	kstat_t *ksp;
+	int status;
+	iodev_t *iodev = NULL;
+
+	SIGAR_DISK_STATS_INIT(disk);
+
+	struct statvfs t;
+	if (statvfs(name, &t) < 0) {
+		return errno;
+	}
+
+	status = sigar_kstat_disk_usage_get_vopstat(sigar, t.f_fsid, disk, &ksp);
+
+	/* service_time formula derived from opensolaris.org:iostat.c */
+	if ((status == SIGAR_OK) && iodev) {
+		sigar_uint64_t delta;
+		double avw, avr, tps, mtps; 
+		double etime, hr_etime;
+
+		if (iodev->disk.snaptime) {
+			delta = disk->snaptime - iodev->disk.snaptime;
+		}
+		else {
+			delta = ksp->ks_crtime - ksp->ks_snaptime;
+		}
+
+		hr_etime = (double)delta;
+		if (hr_etime == 0.0) {
+			hr_etime = (double)NANOSEC;
+		}
+		etime = hr_etime / (double)NANOSEC;
+
+		tps =
+			(((double)(disk->reads - iodev->disk.reads)) / etime) +
+			(((double)(disk->writes - iodev->disk.writes)) / etime);
+
+		delta = disk->wtime - iodev->disk.wtime;
+		if (delta) {
+			avw = (double)delta;
+			avw /= hr_etime;
+		}
+		else {
+			avw = 0.0;
+		}
+
+		delta = disk->rtime - iodev->disk.rtime;
+		if (delta) {
+			avr = (double)delta;
+			avr /= hr_etime;
+		}
+		else {
+			avr = 0.0;
+		}
+
+		disk->queue = avw;
+		disk->service_time = 0.0;
+		disk->total_service_time=SIGAR_NSEC2MSEC(disk->time);
+
+		if (tps && (avw != 0.0 || avr != 0.0)) {
+			mtps = 1000.0 / tps;
+			if (avw != 0.0) {
+				disk->service_time += avw * mtps;
+			}
+			if (avr != 0.0) {
+				disk->service_time += avr * mtps;
+			}
+		}
+
+		memcpy(&iodev->disk, disk, sizeof(iodev->disk));
+	}
+
+	if (status == ENXIO) {
+		/* Virtual device. This has no physical device mapping. */
+		return SIGAR_OK;
+	}
+
+	return status;
+}
+
 int sigar_file_system_usage_get(sigar_t *sigar,
                                 const char *dirname,
                                 sigar_file_system_usage_t *fsusage)
 {
     int status = sigar_statvfs(sigar, dirname, fsusage);
-
     if (status != SIGAR_OK) {
         return status;
-    }
+	}
 
     fsusage->use_percent = sigar_file_system_usage_calc_used(sigar, fsusage);
 
-    sigar_disk_usage_get(sigar, dirname, &fsusage->disk);
+    sigar_disk_usage_get_vopstat(sigar, dirname, &fsusage->disk);
 
     return SIGAR_OK;
 }
