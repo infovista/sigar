@@ -47,6 +47,8 @@
 #define PROC_PARTITIONS PROC_FS_ROOT "partitions"
 #define PROC_DISKSTATS  PROC_FS_ROOT "diskstats"
 
+#define SYS_NET_SPEED	"/sys/class/net/%s/speed"
+
 /*
  * /proc/self/stat fields:
  * 1 - pid
@@ -1876,6 +1878,19 @@ int sigar_net_interface_stat_get(sigar_t *sigar, const char *name,
         ifstat->tx_carrier    = sigar_strtoull(ptr);
 
         ifstat->speed         = SIGAR_FIELD_NOTIMPL;
+
+		char path[8192];
+		sprintf(path,SYS_NET_SPEED,name);
+		FILE *fp = fopen(path, "r");
+		if (fp != 0) {
+			char buffer[8192];
+			if (fgets(buffer, sizeof(buffer), fp) != 0)
+			{
+				buffer[strlen(buffer)-1]=0;
+		    	ifstat->speed = atoi(buffer);
+		    }
+			fclose(fp);
+		}
 
         break;
     }
