@@ -1892,6 +1892,19 @@ int sigar_net_interface_stat_get(sigar_t *sigar, const char *name,
         	fclose(fp);
         }
 
+		char path[8192];
+		sprintf(path,SYS_NET_SPEED,name);
+		FILE *fp = fopen(path, "r");
+		if (fp != 0) {
+			char buffer[8192];
+			if (fgets(buffer, sizeof(buffer), fp) != 0)
+			{
+				buffer[strlen(buffer)-1]=0;
+		    	ifstat->speed = atoi(buffer);
+		    }
+			fclose(fp);
+		}
+
         break;
     }
 
