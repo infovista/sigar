@@ -2313,6 +2313,27 @@ sigar_file_system_usage_get(sigar_t *sigar,
     return SIGAR_OK;
 }
 
+static size_t cache_line_size() {
+    size_t line_size = 0;
+    DWORD buffer_size = 0;
+    DWORD i = 0;
+    SYSTEM_LOGICAL_PROCESSOR_INFORMATION * buffer = 0;
+
+    GetLogicalProcessorInformation(0, &buffer_size);
+    buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION *)malloc(buffer_size);
+    GetLogicalProcessorInformation(&buffer[0], &buffer_size);
+
+    for (i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i) {
+        if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 2) {
+            line_size = buffer[i].Cache.Size;
+            break;
+        }
+    }
+
+    free(buffer);
+    return line_size/1024;
+}
+
 static int sigar_cpu_info_get(sigar_t *sigar, sigar_cpu_info_t *info)
 {
     HKEY key, cpu;
@@ -2371,7 +2392,7 @@ static int sigar_cpu_info_get(sigar_t *sigar, sigar_cpu_info_t *info)
         info->mhz = -1;
     }
 
-    info->cache_size = -1; //XXX
+    info->cache_size = cache_line_size();
     RegCloseKey(key);
     RegCloseKey(cpu);
 
