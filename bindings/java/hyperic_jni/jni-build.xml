@@ -464,8 +464,7 @@
         <linkerarg value="/DEBUG" if="jni.arch64"/>
         <linkerarg value="/PDB:sigar-amd64-winnt.pdb"/>
         <linkerarg value="${jni.info.res}" if="jni.info.res"/>
-        <syslibset dir="C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\lib\amd64" libs="libcmt,OLDNAMES,comsuppw,secchk"/>
-        <syslibset dir="C:\Program Files (x86)\Windows Kits\8.1\Lib\winv6.3\um\x64" libs="pdh,version,psapi,wbemuuid,uuid,kernel32,ws2_32,advapi32,user32,netapi32,ole32,shell32,oleaut32,shlwapi"/>
+        <syslibset libs="pdh,version,psapi,wbemuuid,uuid,kernel32,ws2_32,advapi32,user32,netapi32,ole32,shell32,oleaut32,shlwapi"/>
       </linker>
 
       <compiler name="msvc" debug="${jni.debug}" if="win32">
